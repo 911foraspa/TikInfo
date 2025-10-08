@@ -1,42 +1,32 @@
-from selenium import webdriver
-from selenium.webdriver.firefox.options import Options
-from selenium.webdriver.common.by import By
-import time
+import requests
 
-def tiktok_profile_info(username):
-    options = Options()
-    options.headless = True  # Başsız mod, ekran açılmaz
-    driver = webdriver.Firefox(options=options)
-    url = f"https://www.tiktok.com/@{username}"
-    driver.get(url)
-    time.sleep(5)
-
-    try:
-        name = driver.find_element(By.TAG_NAME, 'h2').text
-    except:
-        name = "TAPILMADI"
-    try:
-        followers = driver.find_element(By.CSS_SELECTOR, "strong[data-e2e='followers-count']").text
-    except:
-        followers = "TAPILMADI"
-    try:
-        following = driver.find_element(By.CSS_SELECTOR, "strong[data-e2e='following-count']").text
-    except:
-        following = "TAPILMADI"
-    try:
-        profile_pic = driver.find_element(By.CSS_SELECTOR, 'img[alt]').get_attribute('src')
-    except:
-        profile_pic = "TAPILMADI"
-
-    tiktok_id = "TAPILMADI"
-    print(f"İstifadəçi adı: @{username}")
-    print(f"Profil adı: {name}")
-    print(f"İzləyici sayı: {followers}")
-    print(f"İzlədikləri: {following}")
-    print(f"TikTok ID: {tiktok_id}")
-    print(f"Profil şəkli: {profile_pic}")
-    driver.quit()
+def tiktok_profile_apify(username, api_token):
+    url = "https://api.apify.com/v2/acts/clockworks~free-tiktok-scraper/run-sync-get-dataset-items"
+    # Parametreleri Apify dökümantasyonuna göre güncelle!
+    payload = {
+        "input": {
+            "user": username
+        }
+    }
+    headers = {
+        "Content-Type": "application/json"
+    }
+    params = {
+        "token": api_token
+    }
+    response = requests.post(url, json=payload, params=params, headers=headers)
+    if response.status_code == 200:
+        try:
+            data = response.json()
+            print("Kullanıcı bilgisi başarıyla çekildi!\n")
+            print(data)
+        except Exception as e:
+            print(f"JSON'da hata: {e}\nYanıt: {response.text}")
+    else:
+        print(f"Hata oluştu: {response.status_code} - {response.text}")
 
 if __name__ == "__main__":
-    user = input("TikTok istifadəçi adını daxil edin: ")
-    tiktok_profile_info(user)
+    # Buraya kendi TikTok kullanıcı adını ve Apify API token'ını yaz!
+    username = "derekhale656"
+    api_token = "apify_api_Fq9d0TFs0AN5DmP5EPdrNoPOqMMJqW1Ssr1K"
+    tiktok_profile_apify(username, api_token)
