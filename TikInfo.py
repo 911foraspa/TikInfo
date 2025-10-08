@@ -1,6 +1,8 @@
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+import time
 import requests
-from bs4 import BeautifulSoup
-import re
 
 def send_to_discord(webhook_url, message):
     data = {"content": message}
@@ -14,31 +16,39 @@ def send_to_discord(webhook_url, message):
         print(f"Xəta oldu: {e}")
 
 def tiktok_profile_info(username):
+    options = Options()
+    options.add_argument('--headless')  # Başsız rejim, brauzer açılmır
+    options.add_argument('--disable-gpu')
+    options.add_argument('--no-sandbox')
+
+    driver = webdriver.Chrome(options=options)
+
     url = f"https://www.tiktok.com/@{username}"
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
-    }
-    resp = requests.get(url, headers=headers)
-    if resp.status_code != 200:
-        print("İstifadəçi tapılmadı və ya giriş bloklandı!")
-        return
+    driver.get(url)
+    time.sleep(5)  # Səhifənin tam yüklənməsi üçün
 
-    soup = BeautifulSoup(resp.text, "html.parser")
+    try:
+        name = driver.find_element(By.TAG_NAME, 'h2').text
+    except:
+        name = "TAPILMADI"
 
-    name = soup.find("h2")
-    name = name.text if name else "TAPILMADI"
+    try:
+        followers = driver.find_element(By.CSS_SELECTOR, "strong[data-e2e='followers-count']").text
+    except:
+        followers = "TAPILMADI"
 
-    follower_span = soup.find("strong", {"data-e2e": "followers-count"})
-    followers = follower_span.text if follower_span else "TAPILMADI"
+    try:
+        following = driver.find_element(By.CSS_SELECTOR, "strong[data-e2e='following-count']").text
+    except:
+        following = "TAPILMADI"
 
-    following_span = soup.find("strong", {"data-e2e": "following-count"})
-    following = following_span.text if following_span else "TAPILMADI"
+    try:
+        profile_pic = driver.find_element(By.CSS_SELECTOR, 'img[alt]').get_attribute('src')
+    except:
+        profile_pic = "TAPILMADI"
 
-    img_tag = soup.find("img", {"alt": True})
-    profile_pic = img_tag['src'] if img_tag and 'src' in img_tag.attrs else "TAPILMADI"
-
-    userid_search = re.search(r'"id":"(\d+)"', resp.text)
-    tiktok_id = userid_search.group(1) if userid_search else "TAPILMADI"
+    # TikTok ID burada almaq çətindir, ona görə TAPILMADI qoyuruq
+    tiktok_id = "TAPILMADI"
 
     print(f"\n--- TikTok Məlumatı ---")
     print(f"İstifadəçi adı: @{username}")
@@ -48,7 +58,6 @@ def tiktok_profile_info(username):
     print(f"TikTok ID: {tiktok_id}")
     print(f"Profil şəkli (foto url): {profile_pic}")
 
-    # Discord-a göndərmək üçün mesaj
     message = f"""
 TikTok istifadəçi adı: @{username}
 Profil adı: {name}
@@ -56,21 +65,23 @@ Profil adı: {name}
 İzlədikləri: {following}
 TikTok ID: {tiktok_id}
 Profil şəkli: {profile_pic}
-    """
+"""
 
     secim = input("Məlumatı Discord-a göndərmək istəyirsən? (bəli/xeyr): ")
     if secim.strip().lower() in ["bəli", "he", "yes"]:
         webhook_url = input("Discord Webhook linkini daxil edin: ")
         send_to_discord(webhook_url, message)
 
+    driver.quit()
+
 def banner():
     print(r"""
-████████╗██╗ ██╗██╗██╗██╗██╗███╗   ███╗██████╗ 
+████████╗██╗ ██╗██╗██╗██╗██╗███╗   ███╗██████╗
 ╚══██╔══╝██║ ██║██║██║██║██║████╗ ████║██╔══██╗
    ██║   ██║ ██║██║██║██║██╔████╔██║██║  ██║
    ██║   ██║ ╚██╗██╔╝██║██║██║╚██╔╝██║██║  ██║
    ██║   ██║  ╚████╔╝ ██║██║ ╚═╝ ██║██████╔╝
-   ╚═╝   ╚═╝   ╚═══╝  ╚═╝╚═╝     ╚═╝╚═════╝ 
+   ╚═╝   ╚═╝   ╚═══╝  ╚═╝╚═╝     ╚═╝╚═════╝
               TikInfo
     """)
     print("By Aspa & Comet\n")
