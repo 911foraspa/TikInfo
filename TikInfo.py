@@ -28,5 +28,5 @@ def tiktok_profile_apify(username, api_token):
 if __name__ == "__main__":
     # Buraya kendi TikTok kullanıcı adını ve Apify API token'ını yaz!
     username = "derekhale656"
-    api_token = "apify_api_Fq9d0TFs0AN5DmP5EPdrNoPOqMMJqW1Ssr1K"
+    api_token = "
     tiktok_profile_apify(username, api_token)
